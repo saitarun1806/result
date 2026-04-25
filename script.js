@@ -15,23 +15,27 @@ function loadData(){
   }
 
   Promise.all([
-    fetch(`${API}/student?roll=${roll}&name=${name}`).then(r=>r.json()),
-    fetch(`${API}/calculate?roll=${roll}`).then(r=>r.json())
-  ])
+  fetch(`${API}/student?roll=${roll}&name=${name}`).then(r=>r.json()),
+  fetch(`${API}/calculate?roll=${roll}&name=${name}`).then(r=>r.json())
+])
   .then(([s,c])=>{
 
     // ❌ IF STUDENT NOT FOUND
-    if(s.error || c.error){
-      document.getElementById("result").innerHTML = `
-        <div class="col-12 text-center mt-4">
-          <div class="alert alert-danger">
-            ❌ Incorrect Roll No or Name <br>
-            <small>Please enter exact name as in hall ticket</small>
-          </div>
-        </div>
-      `;
-      return;
-    }
+    if(
+  s.error || c.error ||
+  !s.name || !s.semesters ||
+  !c.cgpa || !c.semesters
+){
+  document.getElementById("result").innerHTML = `
+    <div class="col-12 text-center mt-4">
+      <div class="alert alert-danger">
+        ❌ Incorrect Roll No or Name <br>
+        <small>Please enter exact name as in hall ticket</small>
+      </div>
+    </div>
+  `;
+  return;
+}
 
     // ✅ VALID DATA
     studentData = s.semesters;
