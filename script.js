@@ -2,11 +2,17 @@ const API = "https://nameless-dawn-298e.database1806.workers.dev";
 
 let studentData = {}, calcData = {}, currentSem = "", adminKey = "";
 
+
 // LOAD DATA
 function loadData(){
 
-  let roll = document.getElementById("roll").value;
-  let name = document.getElementById("name").value;
+  let roll = document.getElementById("roll").value.trim();
+  let name = document.getElementById("name").value.trim();
+
+  if(!roll || !name){
+    alert("Enter Roll and Name");
+    return;
+  }
 
   Promise.all([
     fetch(`${API}/student?roll=${roll}&name=${name}`).then(r=>r.json()),
@@ -14,6 +20,20 @@ function loadData(){
   ])
   .then(([s,c])=>{
 
+    // ❌ IF STUDENT NOT FOUND
+    if(s.error || c.error){
+      document.getElementById("result").innerHTML = `
+        <div class="col-12 text-center mt-4">
+          <div class="alert alert-danger">
+            ❌ Incorrect Roll No or Name <br>
+            <small>Please enter exact name as in hall ticket</small>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    // ✅ VALID DATA
     studentData = s.semesters;
     calcData = c;
 
@@ -44,10 +64,18 @@ function loadData(){
     }
 
     document.getElementById("result").innerHTML = html;
+  })
+  .catch(err=>{
+    console.error(err);
+    document.getElementById("result").innerHTML = `
+      <div class="col-12 text-center mt-4">
+        <div class="alert alert-danger">
+          ⚠️ Server error. Try again later.
+        </div>
+      </div>
+    `;
   });
 }
-
-// OPEN SEM
 function openSem(sem){
 
   currentSem = sem;
