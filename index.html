@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Student Result System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <style>
+    body { background:#f5f5f5; padding:10px; }
+    .card { cursor:pointer; border-radius:10px; }
+    .modal-body { overflow-y:auto; }
+
+    @media(max-width:576px){
+      table { font-size:12px; }
+      th,td { white-space:nowrap; }
+    }
+  </style>
+</head>
+
+<body>
+
+<nav class="navbar bg-dark navbar-dark px-3 mb-3 rounded">
+  <span class="navbar-brand">🎓 Result Portal</span>
+
+  <div>
+    <button class="btn btn-info me-2" onclick="openManualRequestGlobal()">Request Changes</button>
+    <button class="btn btn-warning" onclick="openAdminLogin()">Admin</button>
+  </div>
+</nav>
+
+<div class="container">
+
+  <div class="row mb-3 g-2">
+    <div class="col-md-4">
+      <input id="roll" class="form-control" placeholder="Roll">
+    </div>
+
+    <div class="col-md-4">
+      <input id="name" class="form-control" placeholder="Name">
+    </div>
+
+    <div class="col-md-4">
+      <button class="btn btn-primary w-100" onclick="loadData()">Get Result</button>
+    </div>
+  </div>
+
+  <div id="result" class="row"></div>
+
+</div>
+<div class="modal fade" id="sgpaModal">
+  <div class="modal-dialog modal-xl modal-fullscreen-sm-down">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5>SGPA Calculator</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <div id="sgpaBody"></div>
+
+        <div class="mt-3 text-center">
+          <button class="btn btn-success" onclick="calculateSGPA()">Calculate</button>
+        </div>
+
+        <div class="mt-3 text-center">
+          <h5 id="sgpaResult"></h5>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- SEM MODAL -->
+<div class="modal fade" id="subjectModal">
+  <div class="modal-dialog modal-xl modal-fullscreen-sm-down">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5>Semester Details</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body" id="modalBody"></div>
+
+      <div class="modal-footer">
+  <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+  <button class="btn btn-primary" onclick="openSgpaModal()">Calculate SGPA</button>
+  <button class="btn btn-danger" onclick="openManualRequest()">Request Change</button>
+</div>
+
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="cgpaModal">
+  <div class="modal-dialog modal-lg modal-fullscreen-sm-down">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5>CGPA Calculator</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <!-- Current CGPA -->
+        <div class="mb-3">
+          <label>Current CGPA</label>
+          <input type="number" step="0.01" id="currentCgpa" class="form-control">
+        </div>
+
+        <!-- Semester blocks -->
+        <div id="cgpaSemContainer"></div>
+
+        <div class="text-center mt-3">
+          <button class="btn btn-secondary" onclick="addSemBlock()">+ Add Semester</button>
+        </div>
+
+        <div class="text-center mt-4">
+          <button class="btn btn-success" onclick="calculateCGPA()">Calculate CGPA</button>
+        </div>
+
+        <div class="text-center mt-3">
+          <h5 id="cgpaResult"></h5>
+          <h6 id="totalCredits"></h6>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="successModal">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content text-center p-3">
+
+      <div class="modal-body">
+        <h5 class="text-success">✅ Request Submitted Successfully</h5>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-success w-100" data-bs-dismiss="modal">OK</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+<!-- REQUEST MODAL -->
+<div class="modal fade" id="requestModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <div class="modal-header">
+  <h5>Request Change</h5>
+  <button class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+
+      <div class="modal-body">
+
+        <input id="req_roll" class="form-control mb-2" placeholder="Roll Number">
+
+        <select id="req_subject" class="form-control mb-2"></select>
+
+        <input id="req_external" class="form-control mb-2" placeholder="New External Marks">
+
+        <input id="req_proof" class="form-control" placeholder="Google Drive Link">
+
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-primary w-100" onclick="submitRequest()">Submit</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN LOGIN -->
+<div class="modal fade" id="adminModal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <div class="modal-header"><h5>Admin Login</h5></div>
+
+      <div class="modal-body">
+        <input id="adminKey" type="password" class="form-control">
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-success w-100" onclick="loadRequests()">Login</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div class="modal fade" id="adminPanel">
+  <div class="modal-dialog modal-xl modal-fullscreen-sm-down">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5>Admin Panel</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <div class="text-center mb-3">
+          <button class="btn btn-dark me-2" onclick="loadRequests()">Pending</button>
+          <button class="btn btn-success me-2" onclick="loadApproved()">Approved</button>
+          <button class="btn btn-danger" onclick="loadRejected()">Rejected</button>
+        </div>
+
+        <div id="adminBody"></div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="script.js"></script>
+
+</body>
+</html>
