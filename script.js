@@ -3,7 +3,7 @@ const API = "https://nameless-dawn-298e.database1806.workers.dev";
 let studentData = {}, calcData = {}, currentSem = "", adminKey = "";
 
 // =======================
-// ðŸ”¹ HELPER: SORT SEMESTERS NUMERICALLY
+// 🔹 HELPER: SORT SEMESTERS NUMERICALLY
 // =======================
 function sortSemesters(semesters, latestFirst = true){
   return Object.keys(semesters).sort((a, b) => {
@@ -11,6 +11,18 @@ function sortSemesters(semesters, latestFirst = true){
     let numB = parseInt((b.match(/\d+/) || [0])[0]);
     return latestFirst ? numB - numA : numA - numB;
   });
+}
+
+// =======================
+// 🔹 HELPER: GRADE CHIP CLASS
+// =======================
+function gradeChipClass(grade){
+  let g = (grade || "").replace("+", "p");
+  return `grade-${g}`;
+}
+function gradeChip(grade){
+  if(!grade) return "-";
+  return `<span class="grade-chip ${gradeChipClass(grade)}">${grade}</span>`;
 }
 
 // LOAD DATA
@@ -30,7 +42,7 @@ function loadData(){
 ])
   .then(([s,c])=>{
 
-    // âŒ IF STUDENT NOT FOUND
+    // ❌ IF STUDENT NOT FOUND
     if(
   s.error || c.error ||
   !s.name || !s.semesters ||
@@ -39,7 +51,7 @@ function loadData(){
   document.getElementById("result").innerHTML = `
     <div class="col-12 text-center mt-4">
       <div class="alert alert-danger">
-        âŒ Incorrect Roll No or Name <br>
+        ❌ Incorrect Roll No or Name <br>
         <small>Please enter exact name as in hall ticket</small>
       </div>
     </div>
@@ -47,33 +59,41 @@ function loadData(){
   return;
 }
 
-    // âœ… VALID DATA
+    // ✅ VALID DATA
     studentData = s.semesters;
     calcData = c;
 
-    let html = `<h4 class="text-center">${s.name}</h4>
-<h5 class="text-center">CGPA: ${c.cgpa} | ${c.finalGrade}</h5>
+    let html = `
+    <div class="col-12">
+      <div class="rp-result-head">
+        <div class="rp-student-name">${s.name}</div>
+        <div class="rp-cgpa-seal">
+          <div class="seal-circle">${c.cgpa}</div>
+          <div class="cgpa-text">
+            <div class="cgpa-label">Overall CGPA</div>
+            <div class="cgpa-grade">${c.finalGrade}</div>
+          </div>
+        </div>
+        <div class="mt-3">
+          <button class="btn btn-brass text-white" onclick="openCgpaModal()">
+            Calculate CGPA
+          </button>
+        </div>
+      </div>
+    </div>`;
 
-<div class="text-center my-3">
-  <button class="btn btn-dark" onclick="openCgpaModal()">
-    Calculate CGPA
-  </button>
-</div>
-
-<hr>`;
-
-    // ðŸ”¹ FIXED: sorted semester order (latest first)
+    // 🔹 FIXED: sorted semester order (latest first)
     for(let sem of sortSemesters(c.semesters, true)){
 
       let d = c.semesters[sem];
 
       html += `
-      <div class="col-md-4 mb-3">
-        <div class="card p-3 text-center" onclick="openSem('${sem}')">
+      <div class="col-md-4">
+        <div class="sem-card" onclick="openSem('${sem}')">
           <h5>${sem}</h5>
-          <div>SGPA: ${d.sgpa}</div>
-          <div>Grade: ${d.grade}</div>
-          <div>Credits: ${d.credits}</div>
+          <div class="sem-row"><span>SGPA</span><b>${d.sgpa}</b></div>
+          <div class="sem-row"><span>Grade</span>${gradeChip(d.grade)}</div>
+          <div class="sem-row"><span>Credits</span><b>${d.credits}</b></div>
         </div>
       </div>`;
     }
@@ -85,7 +105,7 @@ function loadData(){
     document.getElementById("result").innerHTML = `
       <div class="col-12 text-center mt-4">
         <div class="alert alert-danger">
-          âš ï¸ Server error. Try again later.
+          ⚠️ Server error. Try again later.
         </div>
       </div>
     `;
@@ -112,12 +132,12 @@ subs.forEach(s=>{
   <tr><th>Sub</th><th>Internal</th><th>External</th><th>Total</th><th>Grade</th></tr>`;
 
   subs.forEach(s=>{
-    html += `<tr>
+    html += `<tr class="${s.grade === 'F' ? 'fail-row' : ''}">
       <td>${s.name}</td>
       <td>${s.internal}</td>
       <td>${s.external}</td>
       <td>${s.total}</td>
-      <td>${s.grade}</td>
+      <td>${gradeChip(s.grade)}</td>
     </tr>`;
   });
 
@@ -126,11 +146,11 @@ subs.forEach(s=>{
 subs.forEach(s=> total += Number(s.total || 0));
 
 html += `
-<div class="card p-3 mt-3 bg-light">
+<div class="summary-strip p-3 mt-3">
   <div class="row text-center">
-    <div class="col"><b>Total</b><br>${total}</div>
-    <div class="col"><b>SGPA</b><br>${calcData.semesters[sem].sgpa}</div>
-    <div class="col"><b>Grade</b><br>${calcData.semesters[sem].grade}</div>
+    <div class="col"><span class="text-muted" style="font-size:12px;">TOTAL</span><b>${total}</b></div>
+    <div class="col"><span class="text-muted" style="font-size:12px;">SGPA</span><b>${calcData.semesters[sem].sgpa}</b></div>
+    <div class="col"><span class="text-muted" style="font-size:12px;">GRADE</span><br>${gradeChip(calcData.semesters[sem].grade)}</div>
   </div>
 </div>`;
 
@@ -184,7 +204,7 @@ function openManualRequestGlobal(){
   const select = document.getElementById("req_subject");
   select.innerHTML = "";
 
-  // ðŸ”¹ FIXED: sorted semester order
+  // 🔹 FIXED: sorted semester order
   for(let sem of sortSemesters(studentData, false)){
     studentData[sem].subjects.forEach(s=>{
       select.innerHTML += `
@@ -202,7 +222,7 @@ function openManualRequestGlobal(){
 
 function openSgpaModal(){
 
-  // ðŸ”¥ CLOSE SEMESTER MODAL FIRST
+  // 🔥 CLOSE SEMESTER MODAL FIRST
   const semModal = bootstrap.Modal.getInstance(
     document.getElementById("subjectModal")
   );
@@ -230,7 +250,7 @@ function openSgpaModal(){
 
   document.getElementById("sgpaBody").innerHTML = html;
 
-  // ðŸ”¥ OPEN SGPA MODAL
+  // 🔥 OPEN SGPA MODAL
   new bootstrap.Modal(
     document.getElementById("sgpaModal")
   ).show();
@@ -369,7 +389,7 @@ function loadRequests(){
       if(!r || typeof r !== "object") return;
 
       html += `
-      <div class="card p-3 mb-3 shadow-sm">
+      <div class="req-card p-3 mb-3">
 
         <div class="row">
 
@@ -391,12 +411,12 @@ function loadRequests(){
 
             <button onclick="approve('${r.id}')"
               class="btn btn-success btn-sm w-100 mb-2">
-              âœ… Approve
+              ✅ Approve
             </button>
 
             <button onclick="reject('${r.id}')"
               class="btn btn-danger btn-sm w-100">
-              âŒ Reject
+              ❌ Reject
             </button>
 
           </div>
@@ -517,7 +537,7 @@ function reject(id){
 }
 
 // =======================
-// ðŸ”¹ REFRESH WHEN ADMIN PANEL CLOSES
+// 🔹 REFRESH WHEN ADMIN PANEL CLOSES
 // =======================
 document.getElementById("adminPanel")
   .addEventListener("hidden.bs.modal", function () {
@@ -538,7 +558,7 @@ function addSemBlock(){
     <div class="d-flex justify-content-between align-items-center">
       <h6 class="mb-2">Semester ${semCount + 1}</h6>
       <button class="btn btn-sm btn-danger"
-        onclick="removeSem('${id}')">âœ–</button>
+        onclick="removeSem('${id}')">✖</button>
     </div>
 
     <div class="row">
@@ -600,7 +620,7 @@ function calculateCGPA(){
     `Total Credits: <b>${totalCredits}</b>`;
 }
 
-// ðŸ”¹ FINAL VERSION (this one wins â€” duplicate function overwritten as in your original code)
+// 🔹 FINAL VERSION (this one wins — duplicate function overwritten as in your original code)
 function openCgpaModal(){
 
   let container = document.getElementById("cgpaSemContainer");
@@ -609,7 +629,7 @@ function openCgpaModal(){
 
   document.getElementById("currentCgpa").value = calcData.cgpa || "";
 
-  // ðŸ”¹ FIXED: sorted semester order (latest first)
+  // 🔹 FIXED: sorted semester order (latest first)
   for(let sem of sortSemesters(calcData.semesters, true)){
 
     let d = calcData.semesters[sem];
