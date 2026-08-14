@@ -1,54 +1,381 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Student Result System</title>
+  <title>Result Portal</title>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
-    body { background:#f5f5f5; padding:10px; }
-    .card { cursor:pointer; border-radius:10px; }
-    .modal-body { overflow-y:auto; }
+
+    :root{
+      --navy:#16233F;
+      --navy-2:#1E2F52;
+      --brass:#B8862E;
+      --brass-light:#E7C878;
+      --paper:#F7F5F0;
+      --card:#FFFFFF;
+      --ink:#2B2F36;
+      --muted:#6B7280;
+      --line:#E7E2D6;
+      --green:#2E7D46;
+      --red:#C0392B;
+      --amber:#B8862E;
+      --slate:#4A5A73;
+      --radius:14px;
+    }
+
+    *{ box-sizing:border-box; }
+
+    body{
+      background:var(--paper);
+      color:var(--ink);
+      font-family:'Inter', sans-serif;
+      font-variant-numeric: tabular-nums;
+      padding:0;
+      min-height:100vh;
+      background-image:
+        radial-gradient(circle at 100% 0%, rgba(184,134,46,0.07), transparent 40%),
+        radial-gradient(circle at 0% 100%, rgba(22,35,63,0.05), transparent 45%);
+    }
+
+    h1,h2,h3,h4,h5,h6, .brand-font{
+      font-family:'Sora', sans-serif;
+      letter-spacing:-0.01em;
+    }
+
+    /* ===== NAVBAR ===== */
+    .rp-nav{
+      background:var(--navy);
+      background-image: linear-gradient(120deg, var(--navy) 0%, var(--navy-2) 100%);
+      padding:14px 22px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      box-shadow:0 4px 18px rgba(22,35,63,0.18);
+    }
+
+    .rp-brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      color:#fff;
+    }
+
+    .rp-seal{
+      width:34px; height:34px;
+      border-radius:50%;
+      background:radial-gradient(circle at 35% 30%, var(--brass-light), var(--brass) 65%);
+      display:flex; align-items:center; justify-content:center;
+      font-size:16px;
+      box-shadow:0 0 0 3px rgba(255,255,255,0.12);
+      flex-shrink:0;
+    }
+
+    .rp-brand-text{
+      font-family:'Sora', sans-serif;
+      font-weight:700;
+      font-size:17px;
+      line-height:1.1;
+    }
+    .rp-brand-sub{
+      font-size:10.5px;
+      color:rgba(255,255,255,0.55);
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      font-weight:600;
+    }
+
+    .rp-nav-actions .btn{
+      font-weight:600;
+      font-size:14px;
+      border-radius:8px;
+      padding:8px 14px;
+    }
+    .btn-outline-brass{
+      color:var(--brass-light);
+      border:1px solid rgba(231,200,120,0.45);
+      background:transparent;
+    }
+    .btn-outline-brass:hover{
+      background:rgba(231,200,120,0.12);
+      color:var(--brass-light);
+    }
+    .btn-brass{
+      background:var(--brass);
+      border:1px solid var(--brass);
+      color:#1B1400;
+    }
+    .btn-brass:hover{ background:#a5761f; color:#1B1400; }
+
+    /* ===== SEARCH BAR ===== */
+    .rp-search-card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:20px;
+      box-shadow:0 2px 14px rgba(22,35,63,0.05);
+    }
+    .rp-search-card label.rp-eyebrow{
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      color:var(--muted);
+      font-weight:700;
+      margin-bottom:6px;
+      display:block;
+    }
+    .form-control{
+      border-radius:9px;
+      border:1px solid var(--line);
+      padding:10px 12px;
+      font-size:15px;
+    }
+    .form-control:focus{
+      border-color:var(--brass);
+      box-shadow:0 0 0 3px rgba(184,134,46,0.15);
+    }
+    #getResultBtn{
+      background:var(--navy);
+      border:1px solid var(--navy);
+      font-weight:700;
+      border-radius:9px;
+      letter-spacing:.01em;
+    }
+    #getResultBtn:hover{ background:var(--navy-2); }
+
+    /* ===== RESULT HEADER ===== */
+    .rp-result-head{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:24px;
+      text-align:center;
+      position:relative;
+      overflow:hidden;
+    }
+    .rp-result-head::before{
+      content:"";
+      position:absolute; inset:0;
+      background:linear-gradient(120deg, rgba(184,134,46,0.06), transparent 55%);
+    }
+    .rp-student-name{
+      font-weight:700;
+      font-size:24px;
+      margin-bottom:10px;
+    }
+    .rp-cgpa-seal{
+      display:inline-flex;
+      align-items:center;
+      gap:14px;
+      background:var(--navy);
+      color:#fff;
+      padding:10px 22px 10px 10px;
+      border-radius:100px;
+      position:relative;
+      z-index:1;
+    }
+    .rp-cgpa-seal .seal-circle{
+      width:52px; height:52px;
+      border-radius:50%;
+      background:radial-gradient(circle at 35% 30%, var(--brass-light), var(--brass) 65%);
+      display:flex; align-items:center; justify-content:center;
+      font-family:'Sora',sans-serif;
+      font-weight:800;
+      font-size:15px;
+      color:#1B1400;
+      flex-shrink:0;
+    }
+    .rp-cgpa-seal .cgpa-text{
+      text-align:left;
+      line-height:1.15;
+    }
+    .rp-cgpa-seal .cgpa-label{
+      font-size:10.5px;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+      color:rgba(255,255,255,0.6);
+      font-weight:700;
+    }
+    .rp-cgpa-seal .cgpa-grade{
+      font-weight:700;
+      font-size:15px;
+    }
+
+    /* ===== SEMESTER CARDS ===== */
+    .sem-card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:18px;
+      cursor:pointer;
+      transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+      height:100%;
+      position:relative;
+    }
+    .sem-card:hover{
+      transform:translateY(-3px);
+      box-shadow:0 10px 24px rgba(22,35,63,0.10);
+      border-color:rgba(184,134,46,0.4);
+    }
+    .sem-card h5{
+      font-weight:700;
+      font-size:16px;
+      margin-bottom:12px;
+      color:var(--navy);
+    }
+    .sem-card .sem-row{
+      display:flex;
+      justify-content:space-between;
+      font-size:13.5px;
+      color:var(--muted);
+      padding:4px 0;
+      border-bottom:1px dashed var(--line);
+    }
+    .sem-card .sem-row:last-child{ border-bottom:none; }
+    .sem-card .sem-row b{ color:var(--ink); font-weight:600; }
+
+    /* ===== GRADE BADGES ===== */
+    .grade-chip{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:34px;
+      padding:3px 9px;
+      border-radius:7px;
+      font-weight:700;
+      font-size:12.5px;
+      letter-spacing:.02em;
+    }
+    .grade-O{ background:rgba(184,134,46,0.15); color:#8a6520; }
+    .grade-Ap, .grade-A{ background:rgba(22,35,63,0.10); color:var(--navy); }
+    .grade-Bp, .grade-B{ background:rgba(74,90,115,0.12); color:var(--slate); }
+    .grade-C, .grade-P{ background:rgba(184,134,46,0.12); color:#8a6520; }
+    .grade-F{ background:rgba(192,57,43,0.13); color:var(--red); }
+
+    /* ===== TABLES ===== */
+    .table{
+      background:var(--card);
+      border-radius:10px;
+      overflow:hidden;
+      font-size:14px;
+    }
+    .table thead th{
+      background:var(--navy);
+      color:#fff;
+      font-weight:600;
+      font-size:12px;
+      text-transform:uppercase;
+      letter-spacing:.05em;
+      border:none;
+      padding:10px 12px;
+    }
+    .table td{
+      padding:10px 12px;
+      vertical-align:middle;
+      border-color:var(--line);
+    }
+
+    .fail-row td{ background:rgba(192,57,43,0.05); }
+
+    /* ===== MODALS ===== */
+    .modal-content{
+      border-radius:16px;
+      border:none;
+      overflow:hidden;
+    }
+    .modal-header{
+      background:var(--navy);
+      color:#fff;
+      border-bottom:none;
+      padding:16px 20px;
+    }
+    .modal-header h5{ font-weight:700; margin:0; }
+    .modal-header .btn-close{ filter:invert(1); opacity:.8; }
+    .modal-footer{ border-top:1px solid var(--line); }
+
+    .summary-strip{
+      background:var(--paper);
+      border:1px solid var(--line);
+      border-radius:12px;
+    }
+    .summary-strip b{ display:block; font-family:'Sora',sans-serif; font-size:18px; color:var(--navy); }
+
+    /* Admin */
+    .req-card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:12px;
+    }
+    .req-card.approved{ background:rgba(46,125,70,0.06); border-color:rgba(46,125,70,0.25); }
+    .req-card.rejected{ background:rgba(192,57,43,0.06); border-color:rgba(192,57,43,0.25); }
+
+    .alert-danger{
+      border-radius:12px;
+      background:rgba(192,57,43,0.08);
+      border:1px solid rgba(192,57,43,0.25);
+      color:var(--red);
+    }
+
+    #notifyBox{ position:fixed; top:14px; right:14px; z-index:9999; }
 
     @media(max-width:576px){
-      table { font-size:12px; }
-      th,td { white-space:nowrap; }
+      table{ font-size:12px; }
+      th,td{ white-space:nowrap; }
+      .rp-brand-text{ font-size:15px; }
+      .rp-nav{ padding:12px 14px; }
     }
+
   </style>
 </head>
 
 <body>
 
-<nav class="navbar bg-dark navbar-dark px-3 mb-3 rounded">
-  <span class="navbar-brand">🎓 Result Portal</span>
+<nav class="rp-nav">
+  <div class="rp-brand">
+    <div class="rp-seal">🎓</div>
+    <div>
+      <div class="rp-brand-text">Result Portal</div>
+      <div class="rp-brand-sub">Academic Records</div>
+    </div>
+  </div>
 
-  <div>
-    <button class="btn btn-info me-2" onclick="openManualRequestGlobal()">Request Changes</button>
-    <button class="btn btn-warning" onclick="openAdminLogin()">Admin</button>
+  <div class="rp-nav-actions d-flex gap-2">
+    <button class="btn btn-outline-brass" onclick="openManualRequestGlobal()">Request Change</button>
+    <button class="btn btn-brass" onclick="openAdminLogin()">Admin</button>
   </div>
 </nav>
-<div id="notifyBox" style="position:fixed; top:10px; right:10px; z-index:9999;"></div>
 
-<div class="container">
+<div id="notifyBox"></div>
 
-  <div class="row mb-3 g-2">
-    <div class="col-md-4">
-      <input id="roll" class="form-control" placeholder="Roll">
-    </div>
+<div class="container py-4">
 
-    <div class="col-md-4">
-      <input id="name" class="form-control" placeholder="Name">
-    </div>
+  <div class="rp-search-card mb-4">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-4">
+        <label class="rp-eyebrow">Roll Number</label>
+        <input id="roll" class="form-control" placeholder="e.g. 21A91A0501">
+      </div>
 
-    <div class="col-md-4">
-      <button class="btn btn-primary w-100" onclick="loadData()">Get Result</button>
+      <div class="col-md-4">
+        <label class="rp-eyebrow">Full Name</label>
+        <input id="name" class="form-control" placeholder="As on hall ticket">
+      </div>
+
+      <div class="col-md-4">
+        <button id="getResultBtn" class="btn w-100 text-white" onclick="loadData()">Get Result</button>
+      </div>
     </div>
   </div>
 
-  <div id="result" class="row"></div>
+  <div id="result" class="row g-3"></div>
 
 </div>
+
+<!-- SGPA MODAL -->
 <div class="modal fade" id="sgpaModal">
   <div class="modal-dialog modal-xl modal-fullscreen-sm-down">
     <div class="modal-content">
@@ -63,7 +390,7 @@
         <div id="sgpaBody"></div>
 
         <div class="mt-3 text-center">
-          <button class="btn btn-success" onclick="calculateSGPA()">Calculate</button>
+          <button class="btn btn-brass" onclick="calculateSGPA()">Calculate</button>
         </div>
 
         <div class="mt-3 text-center">
@@ -89,15 +416,16 @@
       <div class="modal-body" id="modalBody"></div>
 
       <div class="modal-footer">
-  <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-  <button class="btn btn-primary" onclick="openSgpaModal()">Calculate SGPA</button>
-  <button class="btn btn-danger" onclick="openManualRequest()">Request Change</button>
-</div>
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button class="btn btn-primary" onclick="openSgpaModal()">Calculate SGPA</button>
+        <button class="btn btn-danger" onclick="openManualRequest()">Request Change</button>
+      </div>
 
     </div>
   </div>
 </div>
 
+<!-- CGPA MODAL -->
 <div class="modal fade" id="cgpaModal">
   <div class="modal-dialog modal-lg modal-fullscreen-sm-down">
     <div class="modal-content">
@@ -109,13 +437,11 @@
 
       <div class="modal-body">
 
-        <!-- Current CGPA -->
         <div class="mb-3">
-          <label>Current CGPA</label>
+          <label class="rp-eyebrow">Current CGPA</label>
           <input type="number" step="0.01" id="currentCgpa" class="form-control">
         </div>
 
-        <!-- Semester blocks -->
         <div id="cgpaSemContainer"></div>
 
         <div class="text-center mt-3">
@@ -123,12 +449,12 @@
         </div>
 
         <div class="text-center mt-4">
-          <button class="btn btn-success" onclick="calculateCGPA()">Calculate CGPA</button>
+          <button class="btn btn-brass" onclick="calculateCGPA()">Calculate CGPA</button>
         </div>
 
         <div class="text-center mt-3">
           <h5 id="cgpaResult"></h5>
-          <h6 id="totalCredits"></h6>
+          <h6 id="totalCredits" class="text-muted"></h6>
         </div>
 
       </div>
@@ -136,12 +462,15 @@
     </div>
   </div>
 </div>
+
+<!-- SUCCESS MODAL -->
 <div class="modal fade" id="successModal">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content text-center p-3">
 
       <div class="modal-body">
-        <h5 class="text-success">✅ Request Submitted Successfully</h5>
+        <h5 class="text-success">✅ Request submitted successfully</h5>
+        <p class="text-muted mb-0" style="font-size:14px;">You'll be notified once the admin reviews it.</p>
       </div>
 
       <div class="modal-footer">
@@ -151,30 +480,35 @@
     </div>
   </div>
 </div>
+
 <!-- REQUEST MODAL -->
 <div class="modal fade" id="requestModal">
   <div class="modal-dialog">
     <div class="modal-content">
 
       <div class="modal-header">
-  <h5>Request Change</h5>
-  <button class="btn-close" data-bs-dismiss="modal"></button>
-</div>
+        <h5>Request Change</h5>
+        <button class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
 
       <div class="modal-body">
 
+        <label class="rp-eyebrow">Roll Number</label>
         <input id="req_roll" class="form-control mb-2" placeholder="Roll Number">
 
+        <label class="rp-eyebrow">Subject</label>
         <select id="req_subject" class="form-control mb-2"></select>
 
-        <input id="req_external" class="form-control mb-2" placeholder="New External Marks">
+        <label class="rp-eyebrow">New External Marks</label>
+        <input id="req_external" class="form-control mb-2" placeholder="e.g. 62">
 
-        <input id="req_proof" class="form-control" placeholder="Google Drive Link">
+        <label class="rp-eyebrow">Proof (Google Drive link)</label>
+        <input id="req_proof" class="form-control" placeholder="https://drive.google.com/...">
 
       </div>
 
       <div class="modal-footer">
-        <button class="btn btn-primary w-100" onclick="submitRequest()">Submit</button>
+        <button class="btn btn-brass w-100 text-white" onclick="submitRequest()">Submit Request</button>
       </div>
 
     </div>
@@ -189,11 +523,12 @@
       <div class="modal-header"><h5>Admin Login</h5></div>
 
       <div class="modal-body">
+        <label class="rp-eyebrow">Admin Key</label>
         <input id="adminKey" type="password" class="form-control">
       </div>
 
       <div class="modal-footer">
-        <button class="btn btn-success w-100" onclick="loadRequests()">Login</button>
+        <button class="btn btn-brass w-100 text-white" onclick="loadRequests()">Login</button>
       </div>
 
     </div>
@@ -212,10 +547,10 @@
 
       <div class="modal-body">
 
-        <div class="text-center mb-3">
-          <button class="btn btn-dark me-2" onclick="loadRequests()">Pending</button>
-          <button class="btn btn-success me-2" onclick="loadApproved()">Approved</button>
-          <button class="btn btn-danger" onclick="loadRejected()">Rejected</button>
+        <div class="text-center mb-3 d-flex gap-2 justify-content-center flex-wrap">
+          <button class="btn btn-outline-dark" onclick="loadRequests()">Pending</button>
+          <button class="btn btn-outline-success" onclick="loadApproved()">Approved</button>
+          <button class="btn btn-outline-danger" onclick="loadRejected()">Rejected</button>
         </div>
 
         <div id="adminBody"></div>
