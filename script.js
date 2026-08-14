@@ -2,28 +2,19 @@ const API = "https://nameless-dawn-298e.database1806.workers.dev";
 
 let studentData = {}, calcData = {}, currentSem = "", adminKey = "";
 
-// =======================
-// 🔹 HELPER: SORT SEMESTERS NUMERICALLY
-// =======================
-function sortSemesters(semesters, latestFirst = true){
-  return Object.keys(semesters).sort((a, b) => {
-    let numA = parseInt((a.match(/\d+/) || [0])[0]);
-    let numB = parseInt((b.match(/\d+/) || [0])[0]);
-    return latestFirst ? numB - numA : numA - numB;
-  });
+// 🔧 Helper: extract the numeric part of a semester label like "Sem 5"
+// so semesters always render in the correct numeric order (1,2,3,4,5...)
+// instead of the raw insertion/string order that was causing Sem5 to
+// appear right after Sem1.
+function getSemNumber(s){
+  const m = String(s).match(/\d+/);
+  return m ? parseInt(m[0], 10) : 0;
 }
 
-// =======================
-// 🔹 HELPER: GRADE CHIP CLASS
-// =======================
-function gradeChipClass(grade){
-  let g = (grade || "").replace("+", "p");
-  return `grade-${g}`;
+function sortSemKeys(obj){
+  return Object.keys(obj).sort((a, b) => getSemNumber(a) - getSemNumber(b));
 }
-function gradeChip(grade){
-  if(!grade) return "-";
-  return `<span class="grade-chip ${gradeChipClass(grade)}">${grade}</span>`;
-}
+
 
 // LOAD DATA
 function loadData(){
@@ -35,6 +26,13 @@ function loadData(){
     alert("Enter Roll and Name");
     return;
   }
+
+  document.getElementById("result").innerHTML = `
+    <div class="col-12 text-center mt-4">
+      <div class="spinner-border" role="status" style="color:var(--brand-1)"></div>
+      <div class="mt-2 text-muted">Fetching result...</div>
+    </div>
+  `;
 
   Promise.all([
   fetch(`${API}/student?roll=${roll}&name=${name}`).then(r=>r.json()),
@@ -64,39 +62,32 @@ function loadData(){
     calcData = c;
 
     let html = `
-    <div class="col-12">
-      <div class="rp-result-head">
-        <div class="rp-student-name">${s.name}</div>
-        <div class="rp-cgpa-seal">
-          <div class="seal-circle">${c.cgpa}</div>
-          <div class="cgpa-text">
-            <div class="cgpa-label">Overall CGPA</div>
-            <div class="cgpa-grade">${c.finalGrade}</div>
-          </div>
-        </div>
-        <div class="mt-3">
-          <button class="btn btn-brass text-white" onclick="openCgpaModal()">
-            Calculate CGPA
-          </button>
-        </div>
-      </div>
-    </div>`;
+<div class="result-header">
+  <h4>${s.name}</h4>
+  <span class="cgpa-badge"><i class="bi bi-award-fill me-1"></i>CGPA: ${c.cgpa} &nbsp;|&nbsp; ${c.finalGrade}</span>
+  <div class="mt-3">
+    <button class="btn btn-dark" onclick="openCgpaModal()">
+      <i class="bi bi-graph-up me-1"></i>Calculate CGPA
+    </button>
+  </div>
+</div>`;
 
-    // 🔹 FIXED: sorted semester order (latest first)
-    for(let sem of sortSemesters(c.semesters, true)){
+    // 🔧 iterate semesters in correct numeric order (fixes Sem5 showing
+    // right after Sem1 instead of after Sem4)
+    sortSemKeys(c.semesters).forEach(sem => {
 
       let d = c.semesters[sem];
 
       html += `
-      <div class="col-md-4">
-        <div class="sem-card" onclick="openSem('${sem}')">
+      <div class="col-md-4 mb-3">
+        <div class="card p-3 text-center" onclick="openSem('${sem}')">
           <h5>${sem}</h5>
-          <div class="sem-row"><span>SGPA</span><b>${d.sgpa}</b></div>
-          <div class="sem-row"><span>Grade</span>${gradeChip(d.grade)}</div>
-          <div class="sem-row"><span>Credits</span><b>${d.credits}</b></div>
+          <div class="sem-meta">SGPA: ${d.sgpa}</div>
+          <div class="sem-meta">Grade: ${d.grade}</div>
+          <div class="sem-meta">Credits: ${d.credits}</div>
         </div>
       </div>`;
-    }
+    });
 
     document.getElementById("result").innerHTML = html;
   })
@@ -111,7 +102,6 @@ function loadData(){
     `;
   });
 }
-
 function openSem(sem){
 
   currentSem = sem;
@@ -132,12 +122,12 @@ subs.forEach(s=>{
   <tr><th>Sub</th><th>Internal</th><th>External</th><th>Total</th><th>Grade</th></tr>`;
 
   subs.forEach(s=>{
-    html += `<tr class="${s.grade === 'F' ? 'fail-row' : ''}">
+    html += `<tr>
       <td>${s.name}</td>
       <td>${s.internal}</td>
       <td>${s.external}</td>
       <td>${s.total}</td>
-      <td>${gradeChip(s.grade)}</td>
+      <td>${s.grade}</td>
     </tr>`;
   });
 
@@ -146,11 +136,11 @@ subs.forEach(s=>{
 subs.forEach(s=> total += Number(s.total || 0));
 
 html += `
-<div class="summary-strip p-3 mt-3">
+<div class="card p-3 mt-3 bg-light">
   <div class="row text-center">
-    <div class="col"><span class="text-muted" style="font-size:12px;">TOTAL</span><b>${total}</b></div>
-    <div class="col"><span class="text-muted" style="font-size:12px;">SGPA</span><b>${calcData.semesters[sem].sgpa}</b></div>
-    <div class="col"><span class="text-muted" style="font-size:12px;">GRADE</span><br>${gradeChip(calcData.semesters[sem].grade)}</div>
+    <div class="col"><b>Total</b><br>${total}</div>
+    <div class="col"><b>SGPA</b><br>${calcData.semesters[sem].sgpa}</div>
+    <div class="col"><b>Grade</b><br>${calcData.semesters[sem].grade}</div>
   </div>
 </div>`;
 
@@ -204,22 +194,21 @@ function openManualRequestGlobal(){
   const select = document.getElementById("req_subject");
   select.innerHTML = "";
 
-  // 🔹 FIXED: sorted semester order
-  for(let sem of sortSemesters(studentData, false)){
+  // 🔧 keep semesters in correct numeric order here too
+  sortSemKeys(studentData).forEach(sem => {
     studentData[sem].subjects.forEach(s=>{
       select.innerHTML += `
         <option value="${s.code}" data-sem="${sem}">
           ${sem} - ${s.name} (${s.code})
         </option>`;
     });
-  }
+  });
 
   document.getElementById("req_roll").value =
     document.getElementById("roll").value;
 
   new bootstrap.Modal(document.getElementById("requestModal")).show();
 }
-
 function openSgpaModal(){
 
   // 🔥 CLOSE SEMESTER MODAL FIRST
@@ -255,7 +244,6 @@ function openSgpaModal(){
     document.getElementById("sgpaModal")
   ).show();
 }
-
 function calculateSGPA(){
 
   let subs = studentData[currentSem].subjects;
@@ -284,7 +272,6 @@ function calculateSGPA(){
   document.getElementById("sgpaResult").innerHTML =
     `SGPA: <b>${sgpa}</b>`;
 }
-
 function getGrade(mark){
   if(mark >= 91) return "O";
   if(mark >= 81) return "A+";
@@ -299,7 +286,6 @@ function getGrade(mark){
 function getPoint(g){
   return { O:10, "A+":9, A:8, "B+":7, B:6, C:5, P:4, F:0 }[g] || 0;
 }
-
 // SUBMIT REQUEST
 function submitRequest(){
 
@@ -389,7 +375,7 @@ function loadRequests(){
       if(!r || typeof r !== "object") return;
 
       html += `
-      <div class="req-card p-3 mb-3">
+      <div class="card p-3 mb-3 shadow-sm">
 
         <div class="row">
 
@@ -435,6 +421,7 @@ function loadRequests(){
     alert("Failed to load requests");
   });
 }
+
 
 function loadApproved(){
 
@@ -535,7 +522,6 @@ function reject(id){
     body:JSON.stringify({id})
   }).then(()=>loadRequests());
 }
-
 // =======================
 // 🔹 REFRESH WHEN ADMIN PANEL CLOSES
 // =======================
@@ -583,7 +569,6 @@ function addSemBlock(){
   container.insertAdjacentHTML("beforeend", html);
   semCount++;
 }
-
 function removeSem(id){
 
   let el = document.getElementById(`sem_${id}`);
@@ -591,7 +576,6 @@ function removeSem(id){
     el.remove();
   }
 }
-
 function calculateCGPA(){
 
   let sgpas = document.querySelectorAll(".sgpa");
@@ -619,8 +603,6 @@ function calculateCGPA(){
   document.getElementById("totalCredits").innerHTML =
     `Total Credits: <b>${totalCredits}</b>`;
 }
-
-// 🔹 FINAL VERSION (this one wins — duplicate function overwritten as in your original code)
 function openCgpaModal(){
 
   let container = document.getElementById("cgpaSemContainer");
@@ -629,8 +611,9 @@ function openCgpaModal(){
 
   document.getElementById("currentCgpa").value = calcData.cgpa || "";
 
-  // 🔹 FIXED: sorted semester order (latest first)
-  for(let sem of sortSemesters(calcData.semesters, true)){
+  // 🔧 render semesters in correct numeric order (fixes Sem5 jumping
+  // above Sem4 in the CGPA calculator too)
+  sortSemKeys(calcData.semesters).forEach(sem => {
 
     let d = calcData.semesters[sem];
 
@@ -652,7 +635,7 @@ function openCgpaModal(){
     </div>`;
 
     semCount++;
-  }
+  });
 
   new bootstrap.Modal(document.getElementById("cgpaModal")).show();
 }
