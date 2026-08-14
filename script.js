@@ -244,6 +244,15 @@ function openSgpaModal(){
     document.getElementById("sgpaModal")
   ).show();
 }
+
+// =========================
+// 🔧 FIXED: calculateSGPA now uses each subject's REAL credit value
+// (returned by the /student API as `s.credit`) instead of a hardcoded
+// `3`. This respects credit-mapped subjects and the R20M-in-Sem5 = 3
+// override that the backend already computes. Subjects with credit 0
+// (audit/project subjects) are excluded from the SGPA calculation,
+// matching how the backend /calculate endpoint handles them.
+// =========================
 function calculateSGPA(){
 
   let subs = studentData[currentSem].subjects;
@@ -261,17 +270,24 @@ function calculateSGPA(){
     let grade = getGrade(total);
     let point = getPoint(grade);
 
-    let credit = 3; // default (or use credits map if available)
+    // ✅ use the real per-subject credit returned by the API
+    // (falls back to 3 only if it's genuinely missing)
+    let credit = Number(s.credit ?? 3);
 
-    totalCredits += credit;
-    totalPoints += credit * point;
+    if(credit > 0){
+      totalCredits += credit;
+      totalPoints += credit * point;
+    }
   });
 
-  let sgpa = (totalPoints / totalCredits).toFixed(2);
+  let sgpa = totalCredits > 0
+    ? (totalPoints / totalCredits).toFixed(2)
+    : "0.00";
 
   document.getElementById("sgpaResult").innerHTML =
     `SGPA: <b>${sgpa}</b>`;
 }
+
 function getGrade(mark){
   if(mark >= 91) return "O";
   if(mark >= 81) return "A+";
