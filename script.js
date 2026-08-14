@@ -2,6 +2,16 @@ const API = "https://nameless-dawn-298e.database1806.workers.dev";
 
 let studentData = {}, calcData = {}, currentSem = "", adminKey = "";
 
+// =======================
+// ðŸ”¹ HELPER: SORT SEMESTERS NUMERICALLY
+// =======================
+function sortSemesters(semesters, latestFirst = true){
+  return Object.keys(semesters).sort((a, b) => {
+    let numA = parseInt((a.match(/\d+/) || [0])[0]);
+    let numB = parseInt((b.match(/\d+/) || [0])[0]);
+    return latestFirst ? numB - numA : numA - numB;
+  });
+}
 
 // LOAD DATA
 function loadData(){
@@ -20,7 +30,7 @@ function loadData(){
 ])
   .then(([s,c])=>{
 
-    // ❌ IF STUDENT NOT FOUND
+    // âŒ IF STUDENT NOT FOUND
     if(
   s.error || c.error ||
   !s.name || !s.semesters ||
@@ -29,7 +39,7 @@ function loadData(){
   document.getElementById("result").innerHTML = `
     <div class="col-12 text-center mt-4">
       <div class="alert alert-danger">
-        ❌ Incorrect Roll No or Name <br>
+        âŒ Incorrect Roll No or Name <br>
         <small>Please enter exact name as in hall ticket</small>
       </div>
     </div>
@@ -37,7 +47,7 @@ function loadData(){
   return;
 }
 
-    // ✅ VALID DATA
+    // âœ… VALID DATA
     studentData = s.semesters;
     calcData = c;
 
@@ -52,7 +62,8 @@ function loadData(){
 
 <hr>`;
 
-    for(let sem in c.semesters){
+    // ðŸ”¹ FIXED: sorted semester order (latest first)
+    for(let sem of sortSemesters(c.semesters, true)){
 
       let d = c.semesters[sem];
 
@@ -74,12 +85,13 @@ function loadData(){
     document.getElementById("result").innerHTML = `
       <div class="col-12 text-center mt-4">
         <div class="alert alert-danger">
-          ⚠️ Server error. Try again later.
+          âš ï¸ Server error. Try again later.
         </div>
       </div>
     `;
   });
 }
+
 function openSem(sem){
 
   currentSem = sem;
@@ -172,7 +184,8 @@ function openManualRequestGlobal(){
   const select = document.getElementById("req_subject");
   select.innerHTML = "";
 
-  for(let sem in studentData){
+  // ðŸ”¹ FIXED: sorted semester order
+  for(let sem of sortSemesters(studentData, false)){
     studentData[sem].subjects.forEach(s=>{
       select.innerHTML += `
         <option value="${s.code}" data-sem="${sem}">
@@ -186,9 +199,10 @@ function openManualRequestGlobal(){
 
   new bootstrap.Modal(document.getElementById("requestModal")).show();
 }
+
 function openSgpaModal(){
 
-  // 🔥 CLOSE SEMESTER MODAL FIRST
+  // ðŸ”¥ CLOSE SEMESTER MODAL FIRST
   const semModal = bootstrap.Modal.getInstance(
     document.getElementById("subjectModal")
   );
@@ -216,11 +230,12 @@ function openSgpaModal(){
 
   document.getElementById("sgpaBody").innerHTML = html;
 
-  // 🔥 OPEN SGPA MODAL
+  // ðŸ”¥ OPEN SGPA MODAL
   new bootstrap.Modal(
     document.getElementById("sgpaModal")
   ).show();
 }
+
 function calculateSGPA(){
 
   let subs = studentData[currentSem].subjects;
@@ -249,6 +264,7 @@ function calculateSGPA(){
   document.getElementById("sgpaResult").innerHTML =
     `SGPA: <b>${sgpa}</b>`;
 }
+
 function getGrade(mark){
   if(mark >= 91) return "O";
   if(mark >= 81) return "A+";
@@ -263,6 +279,7 @@ function getGrade(mark){
 function getPoint(g){
   return { O:10, "A+":9, A:8, "B+":7, B:6, C:5, P:4, F:0 }[g] || 0;
 }
+
 // SUBMIT REQUEST
 function submitRequest(){
 
@@ -374,12 +391,12 @@ function loadRequests(){
 
             <button onclick="approve('${r.id}')"
               class="btn btn-success btn-sm w-100 mb-2">
-              ✅ Approve
+              âœ… Approve
             </button>
 
             <button onclick="reject('${r.id}')"
               class="btn btn-danger btn-sm w-100">
-              ❌ Reject
+              âŒ Reject
             </button>
 
           </div>
@@ -398,7 +415,6 @@ function loadRequests(){
     alert("Failed to load requests");
   });
 }
-
 
 function loadApproved(){
 
@@ -499,26 +515,15 @@ function reject(id){
     body:JSON.stringify({id})
   }).then(()=>loadRequests());
 }
+
 // =======================
-// 🔹 REFRESH WHEN ADMIN PANEL CLOSES
+// ðŸ”¹ REFRESH WHEN ADMIN PANEL CLOSES
 // =======================
 document.getElementById("adminPanel")
   .addEventListener("hidden.bs.modal", function () {
     location.reload();
   });
-  function openCgpaModal(){
 
-  let container = document.getElementById("cgpaSemContainer");
-  container.innerHTML = "";
-
-  // set existing CGPA
-  document.getElementById("currentCgpa").value = calcData.cgpa || "";
-
-  // add first sem by default
-  addSemBlock();
-
-  new bootstrap.Modal(document.getElementById("cgpaModal")).show();
-}
 let semCount = 0;
 
 function addSemBlock(){
@@ -533,7 +538,7 @@ function addSemBlock(){
     <div class="d-flex justify-content-between align-items-center">
       <h6 class="mb-2">Semester ${semCount + 1}</h6>
       <button class="btn btn-sm btn-danger"
-        onclick="removeSem('${id}')">✖</button>
+        onclick="removeSem('${id}')">âœ–</button>
     </div>
 
     <div class="row">
@@ -558,6 +563,7 @@ function addSemBlock(){
   container.insertAdjacentHTML("beforeend", html);
   semCount++;
 }
+
 function removeSem(id){
 
   let el = document.getElementById(`sem_${id}`);
@@ -565,6 +571,7 @@ function removeSem(id){
     el.remove();
   }
 }
+
 function calculateCGPA(){
 
   let sgpas = document.querySelectorAll(".sgpa");
@@ -592,6 +599,8 @@ function calculateCGPA(){
   document.getElementById("totalCredits").innerHTML =
     `Total Credits: <b>${totalCredits}</b>`;
 }
+
+// ðŸ”¹ FINAL VERSION (this one wins â€” duplicate function overwritten as in your original code)
 function openCgpaModal(){
 
   let container = document.getElementById("cgpaSemContainer");
@@ -600,7 +609,8 @@ function openCgpaModal(){
 
   document.getElementById("currentCgpa").value = calcData.cgpa || "";
 
-  for(let sem in calcData.semesters){
+  // ðŸ”¹ FIXED: sorted semester order (latest first)
+  for(let sem of sortSemesters(calcData.semesters, true)){
 
     let d = calcData.semesters[sem];
 
