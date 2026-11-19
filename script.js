@@ -2,10 +2,7 @@ const API = "https://nameless-dawn-298e.database1806.workers.dev";
 
 let studentData = {}, calcData = {}, currentSem = "", adminKey = "";
 
-// 🔧 Helper: extract the numeric part of a semester label like "Sem 5"
-// so semesters always render in the correct numeric order (1,2,3,4,5...)
-// instead of the raw insertion/string order that was causing Sem5 to
-// appear right after Sem1.
+// Helper: extract the numeric part of a semester label like "Sem 5"
 function getSemNumber(s){
   const m = String(s).match(/\d+/);
   return m ? parseInt(m[0], 10) : 0;
@@ -15,6 +12,12 @@ function sortSemKeys(obj){
   return Object.keys(obj).sort((a, b) => getSemNumber(a) - getSemNumber(b));
 }
 
+// Helper: calculate percentage from CGPA -> (cgpa - 0.5) * 10
+function getPercentage(cgpa){
+  const num = Number(cgpa);
+  if (isNaN(num) || num <= 0.5) return "0.00%";
+  return `${((num - 0.5) * 10).toFixed(2)}%`;
+}
 
 // LOAD DATA
 function loadData(){
@@ -35,36 +38,42 @@ function loadData(){
   `;
 
   Promise.all([
-  fetch(`${API}/student?roll=${roll}&name=${name}`).then(r=>r.json()),
-  fetch(`${API}/calculate?roll=${roll}&name=${name}`).then(r=>r.json())
-])
+    fetch(`${API}/student?roll=${roll}&name=${name}`).then(r=>r.json()),
+    fetch(`${API}/calculate?roll=${roll}&name=${name}`).then(r=>r.json())
+  ])
   .then(([s,c])=>{
 
-    // ❌ IF STUDENT NOT FOUND
+    // IF STUDENT NOT FOUND
     if(
-  s.error || c.error ||
-  !s.name || !s.semesters ||
-  !c.cgpa || !c.semesters
-){
-  document.getElementById("result").innerHTML = `
-    <div class="col-12 text-center mt-4">
-      <div class="alert alert-danger">
-        ❌ Incorrect Roll No or Name <br>
-        <small>Please enter exact name as in hall ticket</small>
-      </div>
-    </div>
-  `;
-  return;
-}
+      s.error || c.error ||
+      !s.name || !s.semesters ||
+      !c.cgpa || !c.semesters
+    ){
+      document.getElementById("result").innerHTML = `
+        <div class="col-12 text-center mt-4">
+          <div class="alert alert-danger">
+            ❌ Incorrect Roll No or Name <br>
+            <small>Please enter exact name as in hall ticket</small>
+          </div>
+        </div>
+      `;
+      return;
+    }
 
-    // ✅ VALID DATA
+    // VALID DATA
     studentData = s.semesters;
     calcData = c;
+
+    const percentageDisplay = c.cgpa === "FAIL"
+      ? "FAIL"
+      : getPercentage(c.cgpa);
 
     let html = `
 <div class="result-header">
   <h4>${s.name}</h4>
-  <span class="cgpa-badge"><i class="bi bi-award-fill me-1"></i>CGPA: ${c.cgpa} &nbsp;|&nbsp; ${c.finalGrade}</span>
+  <span class="cgpa-badge">
+    <i class="bi bi-award-fill me-1"></i>CGPA: ${c.cgpa} &nbsp;|&nbsp; ${percentageDisplay} &nbsp;|&nbsp; ${c.finalGrade}
+  </span>
   <div class="mt-3">
     <button class="btn btn-dark" onclick="openCgpaModal()">
       <i class="bi bi-graph-up me-1"></i>Calculate CGPA
@@ -72,8 +81,6 @@ function loadData(){
   </div>
 </div>`;
 
-    // 🔧 iterate semesters in correct numeric order (fixes Sem5 showing
-    // right after Sem1 instead of after Sem4)
     sortSemKeys(c.semesters).forEach(sem => {
 
       let d = c.semesters[sem];
@@ -102,21 +109,22 @@ function loadData(){
     `;
   });
 }
+
 function openSem(sem){
 
   currentSem = sem;
 
   let subs = studentData[sem].subjects.map((s,i)=>({
-  ...s,
-  grade: calcData.semesters[sem]?.subjects?.[i]?.grade || s.grade
-}));
+    ...s,
+    grade: calcData.semesters[sem]?.subjects?.[i]?.grade || s.grade
+  }));
   let hasFail = false;
 
-subs.forEach(s=>{
-  if(s.grade === "F"){
-    hasFail = true;
-  }
-});
+  subs.forEach(s=>{
+    if(s.grade === "F"){
+      hasFail = true;
+    }
+  });
 
   let html = `<table class="table table-bordered">
   <tr><th>Sub</th><th>Internal</th><th>External</th><th>Total</th><th>Grade</th></tr>`;
@@ -133,32 +141,32 @@ subs.forEach(s=>{
 
   html += `</table>`;
   let total = 0;
-subs.forEach(s=> total += Number(s.total || 0));
+  subs.forEach(s=> total += Number(s.total || 0));
 
-html += `
-<div class="card p-3 mt-3 bg-light">
-  <div class="row text-center">
-    <div class="col"><b>Total</b><br>${total}</div>
-    <div class="col"><b>SGPA</b><br>${calcData.semesters[sem].sgpa}</div>
-    <div class="col"><b>Grade</b><br>${calcData.semesters[sem].grade}</div>
-  </div>
-</div>`;
+  html += `
+  <div class="card p-3 mt-3 bg-light">
+    <div class="row text-center">
+      <div class="col"><b>Total</b><br>${total}</div>
+      <div class="col"><b>SGPA</b><br>${calcData.semesters[sem].sgpa}</div>
+      <div class="col"><b>Grade</b><br>${calcData.semesters[sem].grade}</div>
+    </div>
+  </div>`;
 
   modalBody.innerHTML = html;
   const footer = document.querySelector("#subjectModal .modal-footer");
 
-if(hasFail){
-  footer.innerHTML = `
-    <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-    <button class="btn btn-primary" onclick="openSgpaModal()">Calculate SGPA</button>
-    <button class="btn btn-danger" onclick="openManualRequest()">Request Change</button>
-  `;
-} else {
-  footer.innerHTML = `
-    <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-    <button class="btn btn-primary" onclick="openSgpaModal()">Calculate SGPA</button>
-  `;
-}
+  if(hasFail){
+    footer.innerHTML = `
+      <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      <button class="btn btn-primary" onclick="openSgpaModal()">Calculate SGPA</button>
+      <button class="btn btn-danger" onclick="openManualRequest()">Request Change</button>
+    `;
+  } else {
+    footer.innerHTML = `
+      <button class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      <button class="btn btn-primary" onclick="openSgpaModal()">Calculate SGPA</button>
+    `;
+  }
 
   new bootstrap.Modal(subjectModal).show();
 }
@@ -194,7 +202,6 @@ function openManualRequestGlobal(){
   const select = document.getElementById("req_subject");
   select.innerHTML = "";
 
-  // 🔧 keep semesters in correct numeric order here too
   sortSemKeys(studentData).forEach(sem => {
     studentData[sem].subjects.forEach(s=>{
       select.innerHTML += `
@@ -209,9 +216,10 @@ function openManualRequestGlobal(){
 
   new bootstrap.Modal(document.getElementById("requestModal")).show();
 }
+
 function openSgpaModal(){
 
-  // 🔥 CLOSE SEMESTER MODAL FIRST
+  // CLOSE SEMESTER MODAL FIRST
   const semModal = bootstrap.Modal.getInstance(
     document.getElementById("subjectModal")
   );
@@ -239,20 +247,12 @@ function openSgpaModal(){
 
   document.getElementById("sgpaBody").innerHTML = html;
 
-  // 🔥 OPEN SGPA MODAL
+  // OPEN SGPA MODAL
   new bootstrap.Modal(
     document.getElementById("sgpaModal")
   ).show();
 }
 
-// =========================
-// 🔧 FIXED: calculateSGPA now uses each subject's REAL credit value
-// (returned by the /student API as `s.credit`) instead of a hardcoded
-// `3`. This respects credit-mapped subjects and the R20M-in-Sem5 = 3
-// override that the backend already computes. Subjects with credit 0
-// (audit/project subjects) are excluded from the SGPA calculation,
-// matching how the backend /calculate endpoint handles them.
-// =========================
 function calculateSGPA(){
 
   let subs = studentData[currentSem].subjects;
@@ -270,8 +270,6 @@ function calculateSGPA(){
     let grade = getGrade(total);
     let point = getPoint(grade);
 
-    // ✅ use the real per-subject credit returned by the API
-    // (falls back to 3 only if it's genuinely missing)
     let credit = Number(s.credit ?? 3);
 
     if(credit > 0){
@@ -302,6 +300,7 @@ function getGrade(mark){
 function getPoint(g){
   return { O:10, "A+":9, A:8, "B+":7, B:6, C:5, P:4, F:0 }[g] || 0;
 }
+
 // SUBMIT REQUEST
 function submitRequest(){
 
@@ -339,21 +338,21 @@ function submitRequest(){
   .then(r=>r.json())
   .then(d=>{
 
-  // Close request modal
-  const reqModal = bootstrap.Modal.getInstance(
-    document.getElementById("requestModal")
-  );
-  if(reqModal) reqModal.hide();
+    // Close request modal
+    const reqModal = bootstrap.Modal.getInstance(
+      document.getElementById("requestModal")
+    );
+    if(reqModal) reqModal.hide();
 
-  // Clear inputs
-  document.getElementById("req_external").value = "";
-  document.getElementById("req_proof").value = "";
+    // Clear inputs
+    document.getElementById("req_external").value = "";
+    document.getElementById("req_proof").value = "";
 
-  // Show success modal
-  new bootstrap.Modal(
-    document.getElementById("successModal")
-  ).show();
-});
+    // Show success modal
+    new bootstrap.Modal(
+      document.getElementById("successModal")
+    ).show();
+  });
 }
 
 // ADMIN
@@ -437,7 +436,6 @@ function loadRequests(){
     alert("Failed to load requests");
   });
 }
-
 
 function loadApproved(){
 
@@ -538,9 +536,8 @@ function reject(id){
     body:JSON.stringify({id})
   }).then(()=>loadRequests());
 }
-// =======================
-// 🔹 REFRESH WHEN ADMIN PANEL CLOSES
-// =======================
+
+// REFRESH WHEN ADMIN PANEL CLOSES
 document.getElementById("adminPanel")
   .addEventListener("hidden.bs.modal", function () {
     location.reload();
@@ -585,6 +582,7 @@ function addSemBlock(){
   container.insertAdjacentHTML("beforeend", html);
   semCount++;
 }
+
 function removeSem(id){
 
   let el = document.getElementById(`sem_${id}`);
@@ -592,6 +590,7 @@ function removeSem(id){
     el.remove();
   }
 }
+
 function calculateCGPA(){
 
   let sgpas = document.querySelectorAll(".sgpa");
@@ -611,14 +610,16 @@ function calculateCGPA(){
     totalPoints += sgpa * credit;
   }
 
-  let cgpa = (totalPoints / totalCredits).toFixed(2);
+  let cgpa = totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : "0.00";
+  let percentage = getPercentage(cgpa);
 
   document.getElementById("cgpaResult").innerHTML =
-    `CGPA: <b>${cgpa}</b>`;
+    `CGPA: <b>${cgpa}</b> &nbsp;|&nbsp; Percentage: <b>${percentage}</b>`;
 
   document.getElementById("totalCredits").innerHTML =
     `Total Credits: <b>${totalCredits}</b>`;
 }
+
 function openCgpaModal(){
 
   let container = document.getElementById("cgpaSemContainer");
@@ -627,8 +628,6 @@ function openCgpaModal(){
 
   document.getElementById("currentCgpa").value = calcData.cgpa || "";
 
-  // 🔧 render semesters in correct numeric order (fixes Sem5 jumping
-  // above Sem4 in the CGPA calculator too)
   sortSemKeys(calcData.semesters).forEach(sem => {
 
     let d = calcData.semesters[sem];
